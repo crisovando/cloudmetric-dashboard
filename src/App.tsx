@@ -1,4 +1,3 @@
-import "./App.css";
 import { cn } from "./utils/utils";
 import { Cpu, Thermometer, Database, Network, Server, Zap } from "lucide-react";
 import { StatCard } from "./components/StatCard";
