@@ -28,14 +28,13 @@ export const StatCard: FC<StartCardProps> = ({
   return (
     <div
       className={cn(
-        "bg-zinc-900/40 border p-6 rounded-3xl backdrop-blur-md transition-all group hover:bg-zinc-800/40",
+        "bg-zinc-900/40 border p-4 rounded-3xl backdrop-blur-md transition-all group hover:bg-zinc-800/40",
         colors[color],
+        "flex items-start gap-2"
       )}
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="p-2.5 rounded-xl bg-white/5">
-          {icon}
-        </div>
+      <div className="flex items-center justify-between">
+        <div className="p-2.5 rounded-xl bg-white/5">{icon}</div>
         {trend === "up" && (
           <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
         )}
@@ -44,7 +43,7 @@ export const StatCard: FC<StartCardProps> = ({
         <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">
           {label}
         </p>
-        <div className="text-3xl font-bold tracking-tighter text-white">
+        <div className="text-2xl font-bold tracking-tighter text-white">
           {value}
         </div>
       </div>
