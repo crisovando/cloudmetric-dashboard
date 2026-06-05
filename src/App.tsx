@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Toaster } from "sonner";
 import { cn } from "./utils/utils";
 import {
   Cpu,
@@ -14,7 +15,9 @@ import {
 import { ControlPanel, type ControlCommand } from "./components/ControlPanel";
 import { FleetPanel } from "./components/FleetPanel";
 import { MetricChart } from "./components/MetricChart";
+import { AlertConsole } from "./components/AlertConsole";
 import { useServers, type ServerData } from "./hooks/useDeviceHealth";
+import { useAlertToasts } from "./hooks/useAlertToasts";
 
 function App() {
   const {
@@ -22,10 +25,12 @@ function App() {
     isConnected: connected,
     sendCommand,
     reconnect,
-    hasExhaustedReconnects,
     getServerHistory,
     thresholds,
+    alerts,
+    clearAlerts,
   } = useServers();
+  useAlertToasts(alerts);
   const [selectedServer, setSelectedServer] = useState<ServerData | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [isFleetOpen, setIsFleetOpen] = useState(false);
@@ -94,7 +99,7 @@ function App() {
             />
             {connected ? "Gateway Online" : "Gateway Offline"}
           </div>
-          {hasExhaustedReconnects && (
+          {!connected && (
             <button
               onClick={reconnect}
               className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/50 transition-all text-red-400 hover:text-red-300"
@@ -123,20 +128,20 @@ function App() {
                 <div className="flex items-start justify-between mb-5 relative z-10">
                   <div>
                     <h3 className="font-bold text-lg tracking-tight">
-                      {server.server_id}
+                      {server.name}
                     </h3>
                     <div className="flex items-center gap-2 mt-1.5">
                       <span
                         className={cn(
                           "px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border",
-                          server.status === "healthy" &&
+                          server.status === "Healthy" &&
                             "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-                          server.status === "warning" &&
+                          server.status === "Warning" &&
                             "bg-amber-500/10 text-amber-400 border-amber-500/20",
-                          server.status === "critical" &&
+                          server.status === "Critical" &&
                             "bg-red-500/10 text-red-400 border-red-500/20",
-                          server.status === "offline" &&
-                            "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
+                          server.status === "Offline" &&
+                            "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
                         )}
                       >
                         {server.status}
@@ -166,7 +171,7 @@ function App() {
                         ? "bg-red-500/10 border-red-500/20 text-red-400"
                         : server.cpu > 70
                           ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
-                          : "bg-white/5 border-white/5 text-emerald-400"
+                          : "bg-white/5 border-white/5 text-emerald-400",
                     )}
                   >
                     <Cpu className="w-3 h-3" />
@@ -181,7 +186,7 @@ function App() {
                         ? "bg-red-500/10 border-red-500/20 text-red-400"
                         : server.temp > 60
                           ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
-                          : "bg-white/5 border-white/5 text-blue-400"
+                          : "bg-white/5 border-white/5 text-blue-400",
                     )}
                   >
                     <Thermometer className="w-3 h-3" />
@@ -208,7 +213,10 @@ function App() {
 
                 {/* Chart */}
                 <div className="flex-1 min-h-0">
-                  <MetricChart history={getServerHistory(server.server_id)} thresholds={thresholds} />
+                  <MetricChart
+                    history={getServerHistory(server.server_id)}
+                    thresholds={thresholds}
+                  />
                 </div>
               </div>
             ))}
@@ -226,6 +234,20 @@ function App() {
         isOpen={isFleetOpen}
         onClose={() => setIsFleetOpen(false)}
         servers={servers}
+      />
+
+      <AlertConsole alerts={alerts} onClear={clearAlerts} />
+
+      <Toaster
+        position="top-right"
+        theme="dark"
+        closeButton
+        toastOptions={{
+          style: {
+            background: "#18181b",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+          },
+        }}
       />
     </div>
   );

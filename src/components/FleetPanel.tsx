@@ -154,13 +154,13 @@ export const FleetPanel: FC<FleetPanelProps> = ({
                           <span
                             className={cn(
                               "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
-                              server.status === "healthy" &&
+                              server.status === "Healthy" &&
                                 "bg-emerald-500/10 text-emerald-400",
-                              server.status === "warning" &&
+                              server.status === "Warning" &&
                                 "bg-amber-500/10 text-amber-400",
-                              server.status === "critical" &&
+                              server.status === "Critical" &&
                                 "bg-red-500/10 text-red-400",
-                              server.status === "offline" &&
+                              server.status === "Offline" &&
                                 "bg-zinc-500/10 text-zinc-400",
                             )}
                           >

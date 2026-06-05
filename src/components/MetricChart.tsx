@@ -49,7 +49,7 @@ const METRICS: MetricConfig[] = [
     label: "Memory",
     icon: <Database className="w-3.5 h-3.5" />,
     color: "#8b5cf6",
-    unit: "GB",
+    unit: "%",
   },
   {
     key: "network_in",
@@ -122,7 +122,7 @@ export const MetricChart: FC<MetricChartProps> = ({ history, thresholds }) => {
     const firstTs = history[0].timestamp;
     const lastTs = history[history.length - 1].timestamp;
 
-    if (history.length < MAX_HISTORY_POINTS) {
+    if (lastTs - firstTs < TIME_WINDOW) {
       return [firstTs, firstTs + TIME_WINDOW];
     } else {
       return [lastTs - TIME_WINDOW, lastTs];
@@ -382,7 +382,7 @@ export const MetricChart: FC<MetricChartProps> = ({ history, thresholds }) => {
                   stroke: "#fff",
                   strokeWidth: 2,
                 }}
-                animationDuration={300}
+                isAnimationActive={false}
               />
               <Line
                 type="monotone"
@@ -397,7 +397,7 @@ export const MetricChart: FC<MetricChartProps> = ({ history, thresholds }) => {
                   stroke: "#fff",
                   strokeWidth: 2,
                 }}
-                animationDuration={300}
+                isAnimationActive={false}
               />
               <Line
                 type="monotone"
@@ -412,7 +412,7 @@ export const MetricChart: FC<MetricChartProps> = ({ history, thresholds }) => {
                   stroke: "#fff",
                   strokeWidth: 2,
                 }}
-                animationDuration={300}
+                isAnimationActive={false}
               />
             </LineChart>
           </ResponsiveContainer>

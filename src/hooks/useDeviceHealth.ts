@@ -1,4 +1,4 @@
-import type { HealthStatus, MetricName, Thresholds } from '@/types/deviceHealth';
+import type { AlertEvent, HealthStatus, MetricName, RecoveryEvent, Thresholds } from '@/types/deviceHealth';
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 export interface ServerData {
@@ -25,9 +25,11 @@ export interface MetricHistory {
 }
 
 type WsMessage =
-  | { type: 'Snapshot'; payload: { servers: ServerData[] } }
+  | { type: 'Snapshot'; payload: { servers: ServerData[]; alerts: AlertEvent[] } }
   | { type: 'Update'; payload: ServerData }
-  | { type: 'Deleted'; payload: { server_id: string } };
+  | { type: 'Deleted'; payload: { server_id: string } }
+  | { type: 'Alert'; payload: AlertEvent }
+  | { type: 'Recovery'; payload: RecoveryEvent };
 
 export interface ControlCommand {
   server_id: string;
@@ -46,6 +48,7 @@ export function useServers() {
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isUnmountingRef = useRef(false);
   const [history, setHistory] = useState<Map<string, MetricHistory[]>>(new Map());
+  const [alerts, setAlerts] = useState<AlertEvent[]>([]);
 
   const MAX_HISTORY_POINTS = 100;
 
@@ -69,6 +72,7 @@ export function useServers() {
       wsRef.current = ws;
 
       ws.onopen = () => {
+        if (ws !== wsRef.current) return;
         console.log('WebSocket connected');
         setIsConnected(true);
         setReconnectAttempts(0);
@@ -76,6 +80,7 @@ export function useServers() {
       };
 
       ws.onclose = () => {
+        if (ws !== wsRef.current) return;
         setIsConnected(false);
         
         if (!isUnmountingRef.current) {
@@ -100,6 +105,7 @@ export function useServers() {
       };
 
       ws.onmessage = (event) => {
+        if (ws !== wsRef.current) return;
         const message = JSON.parse(event.data) as WsMessage;
 
         setServers((prevServers) => {
@@ -119,6 +125,8 @@ export function useServers() {
                 }]);
               });
               setHistory(newHistory);
+              // Load alerts from snapshot
+              setAlerts(message.payload.alerts || []);
               // Extract thresholds from first server (they are global)
               if (servers.length > 0) {
                 setThresholds(servers[0].thresholds);
@@ -171,6 +179,28 @@ export function useServers() {
               return prevServers.filter(s => s.server_id !== message.payload.server_id);
             }
 
+            case 'Alert': {
+              setAlerts(prev => {
+                const next = [...prev, message.payload];
+                if (next.length > 100) next.shift();
+                return next;
+              });
+              return prevServers;
+            }
+
+            case 'Recovery': {
+              const recoveredServerId = message.payload.server_id;
+              const now = Math.floor(Date.now() / 1000);
+              setAlerts(prev =>
+                prev.map(alert =>
+                  alert.server_id === recoveredServerId && alert.resolved_at === null
+                    ? { ...alert, resolved_at: now }
+                    : alert
+                )
+              );
+              return prevServers;
+            }
+
             default:
               return prevServers;
           }
@@ -182,11 +212,12 @@ export function useServers() {
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
-      
-      if (wsRef.current) {
+
+      if (wsRef.current && wsRef.current.readyState !== WebSocket.CLOSED) {
+        wsRef.current.onclose = null;
         wsRef.current.close();
       }
-      
+
       setReconnectAttempts(0);
       retryDelayRef.current = 1000;
       connect();
@@ -205,7 +236,12 @@ export function useServers() {
       }
       
       if (wsRef.current) {
+        wsRef.current.onopen = null;
+        wsRef.current.onclose = null;
+        wsRef.current.onmessage = null;
+        wsRef.current.onerror = null;
         wsRef.current.close();
+        wsRef.current = null;
       }
     };
   }, []);
@@ -222,6 +258,10 @@ export function useServers() {
 
   const hasExhaustedReconnects = !isConnected && reconnectAttempts >= MAX_RECONNECT_ATTEMPTS;
 
+  const clearAlerts = useCallback(() => {
+    setAlerts([]);
+  }, []);
+
   return { 
     servers, 
     isConnected, 
@@ -230,6 +270,8 @@ export function useServers() {
     hasExhaustedReconnects,
     reconnectAttempts,
     getServerHistory,
-    thresholds 
+    thresholds,
+    alerts,
+    clearAlerts,
   };
 }

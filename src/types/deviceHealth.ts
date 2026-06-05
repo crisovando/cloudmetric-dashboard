@@ -1,13 +1,15 @@
 export const HealthStatus = {
-  HEALTHY: "healthy",
-  WARNING: "warning",
-  CRITICAL: "critical",
-  OFFLINE: "offline",
+  HEALTHY: "Healthy",
+  WARNING: "Warning",
+  CRITICAL: "Critical",
+  OFFLINE: "Offline",
 } as const;
 
 export type HealthStatus = typeof HealthStatus[keyof typeof HealthStatus];
 
 export type MetricName = "cpu" | "temp" | "memory" | "network_in" | "network_out";
+
+export type AlertMetric = "cpu" | "temp" | "memory" | "network" | "offline";
 
 export interface Thresholds {
   cpu_warning: number;
@@ -16,6 +18,21 @@ export interface Thresholds {
   temp_critical: number;
   memory_warning: number;
   memory_critical: number;
+}
+
+export interface AlertEvent {
+  id: string;
+  server_id: string;
+  server_name: string;
+  timestamp: number;
+  metric: AlertMetric;
+  value: number | null;
+  resolved_at: number | null;
+}
+
+export interface RecoveryEvent {
+  server_id: string;
+  server_name: string;
 }
 
 export interface HealthData {

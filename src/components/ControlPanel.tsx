@@ -176,9 +176,7 @@ export const ControlPanel: FC<ControlPanelProps> = ({
         <div className="flex items-center justify-between p-6 border-b border-white/10">
           <div>
             <h2 className="text-lg font-bold text-white">Server Control</h2>
-            <p className="text-xs text-zinc-500 font-mono">
-              {server?.server_id}
-            </p>
+            <p className="text-md text-zinc-500 font-mono">{server?.name}</p>
           </div>
           <button
             onClick={onClose}
